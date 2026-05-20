@@ -1,0 +1,13 @@
+{
+  "name": "vodafone-comparador-precios",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "scrape": "node scraper.mjs",
+    "update": "node update_from_json.mjs",
+    "setup": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.44.0"
+  }
+}
