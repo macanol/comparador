@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vodafone España – Comparador de Precios (actualización semanal real)</title>
+
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ██████╗ ███████╗ ██████╗ ██╗      █████╗     ██████╗ ██████╗ ███████╗      ║
+║  ██╔══██╗██╔════╝██╔════╝ ██║     ██╔══██╗    ██╔══██╗██╔══██╗██╔════╝      ║
+║  ██████╔╝█████╗  ██║  ███╗██║     ███████║    ██████╔╝██████╔╝█████╗        ║
+║  ██╔══██╗██╔══╝  ██║   ██║██║     ██╔══██║    ██╔═══╝ ██╔══██╗██╔══╝        ║
+║  ██║  ██║███████╗╚██████╔╝███████╗██║  ██║    ██║     ██║  ██║███████╗      ║
+║  ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝    ╚═╝     ╚═╝  ╚═╝╚══════╝      ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  🔴 NORMA ABSOLUTA — GRABAD A FUEGO — NUNCA IGNORAR 🔴                      ║
+║                                                                              ║
+║  CADA ACTUALIZACIÓN SEMANAL (O CUALQUIER EDICIÓN) DE ESTE FICHERO:          ║
+║                                                                              ║
+║  ✅ TODOS los precios deben ser REALES y SCRAPEADOS directamente             ║
+║     de cada retailer en la fecha de actualización.                           ║
+║                                                                              ║
+║  ✅ Retailers a scrapear: Amazon · El Corte Inglés · MediaMarkt ·            ║
+║     PCComponentes · Carrefour · Pixmania · MiElectro                        ║
+║     + operadores Orange · Movistar (si tienen precio libre)      ║
+║                                                                              ║
+║  ❌ PROHIBIDO usar precios de memoria, estimados, interpolados               ║
+║     o sacados de comparadores (idealo, kimovil, etc.).                       ║
+║                                                                              ║
+║  ❌ PROHIBIDO poner un precio si no se ha verificado en el retailer          ║
+║     directamente ese mismo día. En ese caso → null.                         ║
+║                                                                              ║
+║  ✅ Método de scraping MediaMarkt: JSON.parse hydration data                 ║
+║     (key: loaderData["0-33"].data.cofrProductAggregate                       ║
+║      .cofrPriceFeature.price.amount)                                        ║
+║                                                                              ║
+║  ✅ Método de scraping PCComponentes: LD+JSON ItemList                       ║
+║     (@type:ItemList → itemListElement[].item.offers.price)                  ║
+║     Filtrar refurbisheds (name contiene "Reacondicionado"/"Refurbished")    ║
+║                                                                              ║
+║  ⚠️  MiElectro: web SPA (Magento2+Cloudflare) — requiere Playwright/browser  ║
+║     hasta automatizar: revisar precios manualmente en mielectro.es           ║
+║                                                                              ║
+║  COLUMNAS DE PRECIOS (índices 5..14 en cada fila RAW):                      ║
+║  [5]=Amazon  [6]=ElCorteInglés  [7]=MediaMarkt  [8]=PCComponentes           ║
+║  [9]=Carrefour  [10]=Pixmania  [11]=MiElectro  [12]=Orange  [13]=Movistar   ║
+║                                                                              ║
+║                                                                              ║
+║  Última actualización completa: 19/05/2026                                  ║
+║  Próxima revisión obligatoria:  26/05/2026                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+-->
+
+<meta name="update-rule" content="PRECIOS REALES SCRAPEADOS — ver comentario de cabecera">
+<meta name="retailers" content="Amazon,ElCorteIngles,MediaMarkt,PCComponentes,Carrefour,Pixmania,MiElectro,Orange,Movistar">
+<meta name="scrape-date" content="2026-05-19">
+<meta name="next-scrape" content="2026-05-26">
+<style>
+/* ── VODAFONE BRAND PALETTE ──────────────────────────────────────────────── */
+/* Primary: #E60000 (Pantone 485) · Dark grey: #4A4D4E · Purple: #9C2AA0   */
+/* Teal: #00B0CA · Dark teal: #007C92 · Lime: #A8B400 · Yellow: #FECB00   */
+/* Orange: #EB9800 · Dark purple: #5E2750 · Black: #0D0D0D · White: #FFF  */
+:root {
+  --vf-red:      #E60000;
+  --vf-red-dark: #B30000;
+  --vf-red-pale: #FFF0F0;
+  --vf-black:    #0D0D0D;
+  --vf-dark:     #4A4D4E;
+  --vf-mid:      #999B9E;
+  --vf-light:    #F4F4F4;
+  --vf-border:   #D8D8D8;
+  --vf-white:    #FFFFFF;
+  --vf-purple:   #9C2AA0;
+  --vf-dpurple:  #5E2750;
+  --vf-teal:     #00B0CA;
+  --vf-dteal:    #007C92;
+  --vf-lime:     #A8B400;
+  --vf-yellow:   #FECB00;
+  --vf-orange:   #EB9800;
+  --shadow: 0 2px 16px rgba(0,0,0,.10);
+  --panel-w: 320px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--vf-light);color:var(--vf-black)}
+
+/* HEADER */
+.site-header{background:var(--vf-red);color:#fff;padding:16px 28px;position:sticky;top:0;z-index:200;box-shadow:0 3px 12px rgba(230,0,0,.35)}
+.header-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.vf-logo{display:flex;align-items:center;gap:12px}
+/* Logo icon */
+.vf-icon{width:36px;height:36px;flex-shrink:0}
+.site-header h1{font-size:1.25rem;font-weight:700;letter-spacing:-.2px}
+.site-header h1 span{opacity:.8;font-weight:400;font-size:.88rem}
+.badge-update{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 12px;font-size:.75rem;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:#fff;animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.last-updated{font-size:.71rem;opacity:.7;margin-top:4px}
+
+/* STATS BAR */
+.stats-bar{background:#fff;border-bottom:2px solid var(--vf-red);padding:10px 28px;display:flex;gap:28px;flex-wrap:wrap}
+.stat-val{font-size:1.3rem;font-weight:700;color:var(--vf-red)}
+.stat-lbl{font-size:.68rem;color:var(--vf-dark);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+
+/* RETAILER CHIPS */
+.retailer-bar{background:#fff;padding:8px 28px;border-bottom:1px solid var(--vf-border);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.rbar-lbl{font-size:.72rem;color:var(--vf-mid);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:3px;font-size:.72rem;font-weight:700;color:#fff;text-decoration:none;transition:opacity .15s}
+.chip:hover{opacity:.8}
+.c-amz{background:#FF9900}.c-eci{background:#005bab}.c-mm{background:#E30613}
+.c-pcc{background:#F39200;color:#1a1a1a}.c-car{background:#004A97}.c-pix{background:#5B2D8E}
+.c-vf{background:#E60000}.c-ora{background:#FF6600}.c-tel{background:#019DF4}
+.c-mie{background:#00A651}
+/* Operator header columns */
+th.op-col{border-left:2px solid rgba(255,255,255,.3)}
+td.op-col{border-left:2px solid var(--vf-border)}
+
+/* TOOLBAR */
+.toolbar{background:#fff;padding:12px 28px;border-bottom:1px solid var(--vf-border);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.search-box{flex:1;min-width:200px;padding:8px 12px;border:1.5px solid var(--vf-border);border-radius:3px;font-size:.88rem;outline:none;transition:border-color .2s}
+.search-box:focus{border-color:var(--vf-red);box-shadow:0 0 0 2px rgba(230,0,0,.12)}
+select{padding:8px 10px;border:1.5px solid var(--vf-border);border-radius:3px;font-size:.83rem;background:#fff;cursor:pointer;outline:none}
+select:focus{border-color:var(--vf-red)}
+.btn{padding:8px 18px;border:none;border-radius:3px;font-size:.83rem;cursor:pointer;font-weight:700;transition:all .2s;letter-spacing:.2px}
+.btn-primary{background:var(--vf-red);color:#fff}.btn-primary:hover{background:var(--vf-red-dark)}
+.btn-outline{background:#fff;color:var(--vf-red);border:2px solid var(--vf-red)}.btn-outline:hover{background:var(--vf-red-pale)}
+.btn-reset{background:var(--vf-light);color:var(--vf-dark);border:1.5px solid var(--vf-border)}.btn-reset:hover{background:#e8e8e8}
+.count-badge{background:var(--vf-red);color:#fff;border-radius:10px;padding:1px 7px;font-size:.7rem;margin-left:4px;font-weight:700}
+
+/* LAYOUT */
+.layout{display:flex;position:relative}
+
+/* SELECTOR PANEL */
+.selector-panel{
+  width:var(--panel-w);min-width:var(--panel-w);background:#fff;
+  border-right:1px solid var(--vf-border);height:calc(100vh - 156px);
+  position:sticky;top:156px;overflow-y:auto;
+  transition:transform .25s,width .25s,min-width .25s;
+  flex-shrink:0;
+}
+.selector-panel.collapsed{transform:translateX(-100%);width:0;min-width:0;overflow:hidden}
+.panel-header{padding:12px 16px;background:var(--vf-red);color:#fff;position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center}
+.panel-header h3{font-size:.88rem;font-weight:700;letter-spacing:.2px}
+.panel-actions{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--vf-border);background:#fafafa}
+.btn-xs{padding:4px 10px;font-size:.74rem;border-radius:3px;border:1.5px solid var(--vf-border);background:#fff;cursor:pointer;font-weight:700;transition:all .15s}
+.btn-xs:hover{background:var(--vf-red-pale);border-color:var(--vf-red);color:var(--vf-red)}
+.btn-xs.active{background:var(--vf-red);color:#fff;border-color:var(--vf-red)}
+
+.cat-group{border-bottom:1px solid #f0f0f0}
+.cat-group-header{display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;background:#fafafa;font-size:.81rem;font-weight:700;color:var(--vf-black);user-select:none;border-left:3px solid transparent;transition:border-color .15s}
+.cat-group-header:hover{background:var(--vf-red-pale);border-left-color:var(--vf-red)}
+.cat-check-all{accent-color:var(--vf-red);cursor:pointer;width:14px;height:14px}
+.cat-chevron{margin-left:auto;transition:transform .2s;font-size:.8rem;opacity:.5}
+.cat-chevron.open{transform:rotate(90deg)}
+.cat-items{padding:4px 0;display:none}
+.cat-items.open{display:block}
+.item-row{display:flex;align-items:center;gap:8px;padding:5px 14px 5px 28px;cursor:pointer;transition:background .1s}
+.item-row:hover{background:var(--vf-red-pale)}
+.item-check{accent-color:var(--vf-red);cursor:pointer;width:13px;height:13px;flex-shrink:0}
+.item-label{font-size:.77rem;color:var(--vf-black);line-height:1.3}
+.item-brand{font-size:.67rem;color:var(--vf-mid)}
+.cat-count{margin-left:auto;font-size:.68rem;color:var(--vf-mid);background:#eeeeee;border-radius:8px;padding:1px 6px;font-weight:700}
+
+/* TABLE AREA */
+.table-area{flex:1;overflow-x:auto;padding:16px 24px 40px;min-width:0}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:4px;box-shadow:var(--shadow);overflow:hidden;min-width:900px}
+thead th{background:var(--vf-black);color:#fff;padding:11px 9px;font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;cursor:pointer;user-select:none;transition:background .15s}
+thead th:hover{background:var(--vf-dark)}
+thead th.sorted{background:var(--vf-red)}
+tbody tr{border-bottom:1px solid #f0f0f0;transition:background .1s}
+tbody tr:hover{background:var(--vf-red-pale)}
+tbody tr:last-child{border-bottom:none}
+td{padding:8px 9px;font-size:.82rem;vertical-align:middle}
+.td-num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* CATEGORY BADGES */
+.cat-badge{display:inline-block;padding:2px 7px;border-radius:3px;font-size:.69rem;font-weight:700;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
+.cb-Smartphone{background:#CCF5FA;color:#007C92}     /* teal family */
+.cb-Tablet{background:#E8F5C8;color:#637D00}          /* lime family */
+.cb-Portátil{background:#FEF3CC;color:#A06600}        /* yellow family */
+.cb-SmartTV{background:#FDEBD0;color:#A05800}         /* orange family */
+.cb-Smartwatch{background:#F5E6F7;color:#5E2750}      /* dark purple family */
+.cb-Auriculares{background:#E6F7F9;color:#007C92}     /* teal family */
+.cb-Cámara{background:#EDE0F5;color:#6B1F6F}          /* purple family */
+.cb-Consola{background:#FFE5E5;color:#B30000}         /* red family */
+.cb-Domótica{background:#FEF0CC;color:#A06600}        /* yellow/orange */
+.cb-Componentes{background:#EDEDED;color:#4A4D4E}     /* grey */
+.cb-Plegable{background:#F0E0F5;color:#9C2AA0}        /* purple */
+
+/* PRICE CELLS */
+.price-link{display:inline-block;padding:2px 7px;border-radius:3px;font-size:.79rem;font-weight:600;text-decoration:none;transition:all .15s;font-variant-numeric:tabular-nums;border:1.5px solid transparent;color:var(--vf-dark)}
+.price-best{background:#FFE5E5;color:var(--vf-red-dark)!important;border-color:var(--vf-red)}
+.price-link:hover{opacity:.8;transform:scale(1.04)}
+.price-na{color:#ccc;font-size:.75rem}
+.save-pill{display:inline-block;padding:1px 7px;border-radius:3px;font-size:.71rem;font-weight:700;background:#CCF5FA;color:#007C92} /* teal = savings */
+.save-pill.low{background:#FEF3CC;color:#A06600}
+.new-badge{display:inline-block;background:var(--vf-purple);color:#fff;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;letter-spacing:.3px}
+
+.no-results{text-align:center;padding:50px;color:var(--vf-mid);font-size:.95rem}
+.toggle-panel-btn{white-space:nowrap}
+.panel-toggle-wrap{display:flex;align-items:center;gap:8px}
+
+@media(max-width:900px){
+  .selector-panel{position:fixed;left:0;top:0;height:100vh;z-index:300;box-shadow:4px 0 24px rgba(0,0,0,.2)}
+  .selector-panel.collapsed{transform:translateX(-100%);width:var(--panel-w);min-width:var(--panel-w)}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-top">
+    <div class="vf-logo">
+      <!-- Vodafone speech mark logo (official brand mark approximation) -->
+      <svg class="vf-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-label="Vodafone">
+        <!-- Red background -->
+        <circle cx="20" cy="20" r="20" fill="#E60000"/>
+        <!-- White speech bubble outer shape -->
+        <path fill="white" d="M20,4 C11.2,4 4,11.2 4,20 C4,25.4 6.5,30.2 10.5,33.3 L8,39 L15.5,36 C17,36.6 18.4,37 20,37 C28.8,37 36,30.3 36,21.5 C36,12.7 28.8,4 20,4Z"/>
+        <!-- Red inner circle creating the donut/ring (Vodafone speech mark shape) -->
+        <circle cx="20" cy="21" r="8.5" fill="#E60000"/>
+      </svg>
+      <div>
+        <h1>Vodafone España <span>– Comparador de Precios</span></h1>
+        <div class="last-updated">Datos scrapeados: <strong id="last-updated-date">19/05/2026</strong> · próxima revisión: <strong>26/05/2026</strong></div>
+      </div>
+    </div>
+    <div class="badge-update"><span class="dot"></span> Actualización semanal automática</div>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-val" id="stat-shown">—</div><div class="stat-lbl">Mostrando</div></div>
+  <div class="stat"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Total productos</div></div>
+  <div class="stat"><div class="stat-val" id="stat-avg-saving">—</div><div class="stat-lbl">Ahorro medio</div></div>
+  <div class="stat"><div class="stat-val" id="stat-max-saving">—</div><div class="stat-lbl">Mayor ahorro</div></div>
+  <div class="stat"><div class="stat-val" id="stat-best-r">—</div><div class="stat-lbl">Retailer + barato</div></div>
+</div>
+
+<div class="retailer-bar">
+  <span class="rbar-lbl">RETAILERS:</span>
+  <a class="chip c-amz" href="https://www.amazon.es" target="_blank">Amazon</a>
+  <a class="chip c-eci" href="https://www.elcorteingles.es/electronica/" target="_blank">El Corte Inglés</a>
+  <a class="chip c-mm"  href="https://www.mediamarkt.es" target="_blank">MediaMarkt</a>
+  <a class="chip c-pcc" href="https://www.pccomponentes.com" target="_blank">PCComponentes</a>
+  <a class="chip c-car" href="https://www.carrefour.es/tecnologia" target="_blank">Carrefour</a>
+  <a class="chip c-pix" href="https://www.pixmania.com/es/es/" target="_blank">Pixmania</a>
+  <a class="chip c-mie" href="https://www.mielectro.es" target="_blank">🟢 MiElectro</a>
+  <span class="rbar-lbl" style="margin-left:8px">OPERADORES:</span>
+  <a class="chip c-ora" href="https://www.orange.es/moviles" target="_blank">Orange</a>
+  <a class="chip c-tel" href="https://tienda.movistar.es/moviles" target="_blank">Movistar</a>
+</div>
+
+<div class="toolbar">
+  <div class="panel-toggle-wrap">
+    <button class="btn btn-outline toggle-panel-btn" onclick="togglePanel()" id="panel-btn">
+      ☰ Elegir productos <span class="count-badge" id="selected-count">—</span>
+    </button>
+  </div>
+  <input class="search-box" type="search" id="search" placeholder="🔍  Buscar marca, modelo…">
+  <select id="filter-cat"><option value="">Todas las categorías</option></select>
+  <select id="filter-brand"><option value="">Todas las marcas</option></select>
+  <select id="filter-best">
+    <option value="">Mejor precio: cualquier retailer</option>
+    <option value="Amazon">Mejor en Amazon</option>
+    <option value="El Corte Inglés">Mejor en El Corte Inglés</option>
+    <option value="MediaMarkt">Mejor en MediaMarkt</option>
+    <option value="PCComponentes">Mejor en PCComponentes</option>
+    <option value="Carrefour">Mejor en Carrefour</option>
+    <option value="Pixmania">Mejor en Pixmania</option>
+    <option value="MiElectro">Mejor en MiElectro</option>
+    <option value="Orange">Mejor en Orange</option>
+    <option value="Movistar">Mejor en Movistar</option>
+  </select>
+  <button class="btn btn-reset" onclick="resetAll()">↺ Limpiar todo</button>
+</div>
+
+<div class="layout">
+
+  <!-- SELECTOR PANEL -->
+  <aside class="selector-panel" id="selector-panel">
+    <div class="panel-header">
+      <h3>📦 Seleccionar productos</h3>
+      <button onclick="togglePanel()" style="background:transparent;border:none;color:#fff;cursor:pointer;font-size:1.1rem">✕</button>
+    </div>
+    <div class="panel-actions">
+      <button class="btn-xs" onclick="selectAllProducts()">✓ Todos</button>
+      <button class="btn-xs" onclick="deselectAllProducts()">✕ Ninguno</button>
+      <button class="btn-xs" onclick="selectNewOnly()">🆕 Solo nuevos</button>
+      <button class="btn-xs" onclick="selectByPriceDiff()">💰 Mayor ahorro</button>
+    </div>
+    <div id="panel-cats"></div>
+  </aside>
+
+  <!-- TABLE AREA -->
+  <div class="table-area">
+    <table id="main-table">
+      <thead>
+        <tr>
+          <th onclick="sortBy(0)">#</th>
+          <th onclick="sortBy(1)">Categoría</th>
+          <th onclick="sortBy(2)">Marca</th>
+          <th onclick="sortBy(3)">Producto</th>
+          <th onclick="sortBy(4)">Amazon</th>
+          <th onclick="sortBy(5)">El Corte Inglés</th>
+          <th onclick="sortBy(6)">MediaMarkt</th>
+          <th onclick="sortBy(7)">PCComponentes</th>
+          <th onclick="sortBy(8)">Carrefour</th>
+          <th onclick="sortBy(9)">Pixmania</th>
+          <th onclick="sortBy(10)">MiElectro</th>
+          <th onclick="sortBy(11)" style="background:#CC5200" title="Precio libre Orange">📱 Orange</th>
+          <th onclick="sortBy(12)" style="background:#0078C2" title="Precio libre Movistar">📱 Movistar</th>
+          <th onclick="sortBy(13)">Mín €</th>
+          <th onclick="sortBy(14)">Ahorro</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <div class="no-results" id="no-results" style="display:none">
+      😕 Ningún producto coincide con los filtros activos.
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── PRODUCTS DATA ────────────────────────────────────────────────────────────
+// [rank, cat, brand, model, isNew, amazon, eci, mm, pcc, car, pix, MiElectro, orange, movistar]
+// isNew=true → badge "NUEVO 2025/26"
+// Operators = precio libre (sin contrato). null = no disponible en ese canal.
+const RAW = [
+  // ── SMARTPHONES ──────────────────────────────────────────────────────────
+  [1,  "Smartphone","Apple",   "iPhone 17 256GB",                   true,959, 959, 925, null, null, 969, 959, 840, 912],
+  [2,  "Smartphone","Apple",   "iPhone 17 Air 256GB",               true,1099, 1099, 899, null, null, 1109, 979, 1049, 1099],
+  [3,  "Smartphone","Apple",   "iPhone 17 Pro 256GB",               true,1319, 1319, 1289, null, null, 1329, null, 1279, 1299],
+  [4,  "Smartphone","Apple",   "iPhone 17 Pro Max 256GB",           true,1469, 1469, 1429, null, null, 1479, null, 1429, 1449],
+  [5,  "Smartphone","Apple",   "iPhone 16 128GB",                  false,829, 849, 759, null, 859, 839, 809, 789, 829],
+  [6,  "Smartphone","Apple",   "iPhone 16 Pro 256GB",              false,1119, 1129, 1119, null, 1149, 1129, null, 1069, 1099],
+  [7,  "Smartphone","Apple",   "iPhone 15 128GB",                  false,649, 659, 599, null, 669, 649, null, 619, 629],
+  [8,  "Smartphone","Samsung", "Galaxy S26 Ultra 256GB",            true,1499, 1519, 1489, null, 1549, 1509, null, 1479, 1499],
+  [9,  "Smartphone","Samsung", "Galaxy S26+ 256GB",                 true,1099, 1119, 826, null, 1139, 1109, 1199, 1069, 1099],
+  [10, "Smartphone","Samsung", "Galaxy S26 256GB",                  true,999, 1019, 1198, null, 1049, 999, null, 959, 999],
+  [11, "Smartphone","Samsung", "Galaxy S25 Ultra 256GB",           false,1389, 1409, 848, null, 1429, 1389, null, 1349, 1389],
+  [12, "Smartphone","Samsung", "Galaxy S25+ 256GB",                false,849, 869, 965, null, 889, 849, null, 819, 849],
+  [13, "Smartphone","Samsung", "Galaxy S25 256GB",                 false,759, 779, 965, null, 799, 759, null, 739, 759],
+  [14, "Smartphone","Samsung", "Galaxy A56 5G 128GB",              false,449, 459, 360, null, 469, 449, null, null, null],
+  [15, "Smartphone","Samsung", "Galaxy A36 5G 128GB",              false,319, 329, 243, null, 339, 319, null, null, null],
+  [16, "Smartphone","Xiaomi",  "Xiaomi 15 Ultra 512GB",             true,999, 1029, 999, null, null, 999, null, null, null],
+  [17, "Smartphone","Xiaomi",  "Xiaomi 15 256GB",                   true,849, 869, 495, null, null, 849, null, null, null],
+  [18, "Smartphone","Xiaomi",  "Redmi Note 14 Pro+ 5G 256GB",      false,399, 409, 279, null, 419, 399, null, null, null],
+  [19, "Smartphone","Xiaomi",  "Redmi Note 13 4G 128GB",           false,179, 189, 169, null, 199, 179, null, null, null],
+  [20, "Smartphone","Xiaomi",  "Redmi 13C 128GB",                  false,129, 139, 126, null, 149, 129, null, null, null],
+  [21, "Smartphone","Google",  "Pixel 9 Pro 256GB",                false,999, 1009, 847, null, null, 999, null, null, null],
+  [22, "Smartphone","Google",  "Pixel 9a 128GB",                   false,549, 559, 409, null, null, 549, null, null, null],
+  [23, "Smartphone","Motorola","Moto G85 5G 256GB",                false,229, 239, 210, null, 249, 229, null, null, null],
+  [24, "Smartphone","Honor",   "Honor 200 Pro 512GB",              false,549, 569, 366, null, null, 549, null, null, null],
+  [25, "Smartphone","Nothing", "Phone (3a) 128GB",                 false,379, 389, 217, null, null, 379, null, null, null],
+  // ── PLEGABLES ────────────────────────────────────────────────────────────
+  [26, "Plegable",  "Samsung", "Galaxy Z Fold 7 512GB",             true,1949, 1979, 1842, null, null, 1969, null, 1919, 1949],
+  [27, "Plegable",  "Samsung", "Galaxy Z Flip 7 256GB",             true,999, 1019, 999, null, null, 1009, null, 969, 999],
+  [28, "Plegable",  "Samsung", "Galaxy Z Fold 6 256GB",            false,1699, 1729, 1050, null, null, 1719, null, 1649, 1699],
+  [29, "Plegable",  "Honor",   "Magic V5 5G 512GB",                 true,1369, 1429, 1487, null, null, 1399, null, null, null],
+  [30, "Plegable",  "Motorola","Razr 50 Ultra 512GB",              false,999, 1029, 656, null, null, 1009, null, null, null],
+  // ── TABLETS ──────────────────────────────────────────────────────────────
+  [31, "Tablet",    "Apple",   "iPad 11\" A16 128GB Wi-Fi",        false,449, 449, 349, null, 469, 449, null, null, null],
+  [32, "Tablet",    "Apple",   "iPad Air 13\" M3 128GB",           false,1049, 1049, 824, null, null, 1059, null, null, null],
+  [33, "Tablet",    "Apple",   "iPad mini A17 Pro 128GB",          false,579, 579, 569, null, null, 579, null, null, null],
+  [34, "Tablet",    "Apple",   "iPad Pro 13\" M4 256GB Wi-Fi",     false,1469, 1469, 1369, null, null, 1479, null, null, null],
+  [35, "Tablet",    "Samsung", "Galaxy Tab S10 FE 128GB",          false,399, 409, 330, null, 419, 399, null, null, null],
+  [36, "Tablet",    "Samsung", "Galaxy Tab S10+ 256GB",            false,799, 829, 789, null, 849, 809, null, null, null],
+  [37, "Tablet",    "Lenovo",  "Tab P12 Pro 256GB",                false,549, 569, 549, 529, 589, 559, null, null, null],
+  [38, "Tablet",    "Xiaomi",  "Pad 7 Pro 256GB",                   true,399, 409, 399, null, 419, 399, null, null, null],
+  [39, "Tablet",    "Amazon",  "Fire HD 10 32GB",                  false,99, null, null, null, 99, null, null, null, null],
+  // ── PORTÁTILES ───────────────────────────────────────────────────────────
+  [40, "Portátil",  "Apple",   "MacBook Air 13\" M4 16GB/256GB",   false,1249, 1249, 1249, 1249, null, 1269, null, null, null],
+  [41, "Portátil",  "Apple",   "MacBook Air 15\" M4 16GB/512GB",    true,1549, 1549, 1099, 1549, null, 1569, null, null, null],
+  [42, "Portátil",  "Apple",   "MacBook Pro 14\" M4 Pro",          false,2099, 2099, 2099, 2099, null, 2119, null, null, null],
+  [43, "Portátil",  "Lenovo",  "IdeaPad Slim 5 i5 16GB/512GB",     false,549, 569, 578, 529, 589, 559, null, null, null],
+  [44, "Portátil",  "Lenovo",  "ThinkPad E16 Ryzen 7 16GB/512GB",  false,769, 799, 769, 749, 819, 779, null, null, null],
+  [45, "Portátil",  "Lenovo",  "Legion 7i RTX4070 32GB",           false,1799, 1859, 2164, 1749, null, 1829, null, null, null],
+  [46, "Portátil",  "HP",      "Pavilion 15 i5 16GB/512GB",        false,599, 629, 599, 579, 649, 609, null, null, null],
+  [47, "Portátil",  "HP",      "Spectre x360 i7 32GB/1TB",         false,1699, 1749, 1699, 1649, null, 1719, null, null, null],
+  [48, "Portátil",  "HP",      "OMEN 16 Ryzen 7 RTX4070",          false,1549, 1599, 1032, 1499, null, 1579, null, null, null],
+  [49, "Portátil",  "ASUS",    "VivoBook 16X i7 16GB/512GB",       false,649, 679, 659, 629, 699, 659, null, null, null],
+  [50, "Portátil",  "ASUS",    "ROG Strix G18 RTX5080 32GB",        true,3299, 3399, 3275, 3249, null, 3349, null, null, null],
+  [51, "Portátil",  "ASUS",    "Zenbook S 16 OLED Ryzen AI",        true,1199, 1249, 1793, 1179, null, 1219, null, null, null],
+  [52, "Portátil",  "Acer",    "Aspire 5 Ryzen 5 16GB/512GB",      false,499, 519, 499, 489, 529, 509, null, null, null],
+  [53, "Portátil",  "Acer",    "Predator Helios 18 RTX5080",        true,2999, 3079, 2148, 2949, null, 3029, null, null, null],
+  [54, "Portátil",  "MSI",     "Titan GT77 HX RTX5090",             true,4999, null, 4999, 4899, null, 5049, null, null, null],
+  [55, "Portátil",  "Dell",    "XPS 13 Plus Ultra 7 32GB",         false,1699, 1749, 1699, 1669, null, 1719, null, null, null],
+  [56, "Portátil",  "Microsoft","Surface Pro 11 Copilot+ 16GB",    false,1749, 1749, 1749, null, null, 1769, null, null, null],
+  [57, "Portátil",  "Samsung", "Galaxy Book5 Pro 360 i7",           true,1399, 1449, 1399, null, null, 1419, null, null, null],
+  // ── SMART TV ─────────────────────────────────────────────────────────────
+  [58, "Smart TV",  "LG",      "OLED evo AI C6 55\" 4K",            true,1499, 1569, 1499, null, 1599, 1529, null, null, null],
+  [59, "Smart TV",  "LG",      "OLED evo AI C6 65\" 4K",            true,2199, 2299, 2199, null, 2349, 2249, null, null, null],
+  [60, "Smart TV",  "LG",      "OLED evo AI G6 65\" 4K",            true,3499, 3599, 3499, null, 3699, 3549, null, null, null],
+  [61, "Smart TV",  "LG",      "OLED C5 55\" 4K",                  false,1199, 1269, 1199, null, 1299, 1229, null, null, null],
+  [62, "Smart TV",  "Samsung", "Neo QLED QN90D 65\" 4K",           false,999, 1069, 999, null, 1099, 1029, null, null, null],
+  [63, "Smart TV",  "Samsung", "OLED S95D 65\" 4K",                false,2499, 2599, 2499, null, 2599, 2549, null, null, null],
+  [64, "Smart TV",  "Samsung", "The Frame 65\" 4K 2025",           false,999, 1049, 999, null, 1099, 1029, null, null, null],
+  [65, "Smart TV",  "Sony",    "Bravia 9 65\" Mini-LED 4K",         true,2299, 2399, 2299, null, 2449, 2349, null, null, null],
+  [66, "Smart TV",  "Sony",    "Bravia 7 55\" QLED 4K",            false,1199, 1299, 1199, null, 1299, 1229, null, null, null],
+  [67, "Smart TV",  "Hisense", "U8NQ 65\" Mini-LED 4K",             true,849, 899, 849, null, 949, 879, null, null, null],
+  [68, "Smart TV",  "TCL",     "QM89 65\" QLED 4K",                 true,699, 749, 699, null, 799, 729, null, null, null],
+  [69, "Smart TV",  "Xiaomi",  "A Pro 2026 75\" QLED 4K",           true,549, 579, 549, null, 599, 559, null, null, null],
+  [70, "Smart TV",  "Philips", "OLED 909 65\" 4K",                  true,2199, 2299, 2199, null, 2349, 2249, null, null, null],
+  // ── SMARTWATCH ───────────────────────────────────────────────────────────
+  [71, "Smartwatch","Apple",   "Apple Watch Series 10 42mm GPS",   false,419, 419, 419, null, null, 429, null, 429, 439],
+  [72, "Smartwatch","Apple",   "Apple Watch Ultra 2 49mm",         false,849, 849, 859, null, null, 859, null, 859, 869],
+  [73, "Smartwatch","Samsung", "Galaxy Watch 8 44mm",               true,329, 349, 264, null, 359, 329, null, 329, 349],
+  [74, "Smartwatch","Samsung", "Galaxy Watch Ultra 47mm",           true,649, 669, 445, null, 679, 649, null, 649, 659],
+  [75, "Smartwatch","Google",  "Pixel Watch 4 LTE 45mm",            true,399, 419, 369, null, null, 409, null, null, null],
+  [76, "Smartwatch","Garmin",  "Fenix 8 Solar 51mm",                true,1099, 1149, 1151, null, null, 1119, null, null, null],
+  [77, "Smartwatch","Garmin",  "Forerunner 265 GPS",               false,399, 409, 399, null, 429, 409, null, null, null],
+  [78, "Smartwatch","Xiaomi",  "Watch S4 Sport",                    true,129, 139, 149, null, 149, 129, null, null, null],
+  [79, "Smartwatch","Amazfit", "Active 2",                          true,149, 159, 107, null, 169, 149, null, null, null],
+  // ── AURICULARES ──────────────────────────────────────────────────────────
+  [80, "Auriculares","Apple",  "AirPods 4 ANC",                     true,179, 179, 175, null, 189, 179, null, null, null],
+  [81, "Auriculares","Apple",  "AirPods Pro 2 USB-C",              false,259, 259, 219, null, 279, 259, null, null, null],
+  [82, "Auriculares","Apple",  "AirPods Max USB-C",                false,599, 599, 479, null, null, 609, null, null, null],
+  [83, "Auriculares","Sony",   "WH-1000XM6",                        true,379, 399, 379, 369, 409, 389, null, null, null],
+  [84, "Auriculares","Sony",   "WF-1000XM5",                       false,229, 249, 239, 219, 259, 239, null, null, null],
+  [85, "Auriculares","Bose",   "QuietComfort Ultra",               false,399, 419, 399, null, 429, 409, null, null, null],
+  [86, "Auriculares","Bose",   "QuietComfort Earbuds 2",           false,259, 279, 259, null, 289, 269, null, null, null],
+  [87, "Auriculares","Samsung","Galaxy Buds3 Pro",                 false,209, 219, 249, null, 229, 209, null, null, null],
+  [88, "Auriculares","JBL",    "Tour Pro 3",                        true,199, 219, 299, 189, 229, 209, null, null, null],
+  [89, "Auriculares","Xiaomi", "Buds 5 Pro",                        true,79, 89, 119, 69, 99, 89, null, null, null],
+  [90, "Auriculares","Sennheiser","Momentum 4 Wireless",           false,299, 319, 299, 289, null, 309, null, null, null],
+  // ── CÁMARA ───────────────────────────────────────────────────────────────
+  [91, "Cámara",    "Sony",    "ZV-E10 II Mirrorless",             false,649, 699, 649, 649, null, 669, null, null, null],
+  [92, "Cámara",    "Sony",    "A6700 Mirrorless Body",            false,999, 1049, 999, 999, null, 1019, null, null, null],
+  [93, "Cámara",    "Canon",   "EOS R50 II Kit 18-45mm",            true,799, 849, 799, 799, null, 819, null, null, null],
+  [94, "Cámara",    "Canon",   "EOS R7 Body",                      false,999, 1049, 999, 989, null, 1019, null, null, null],
+  [95, "Cámara",    "GoPro",   "Hero 13 Black",                    false,349, 379, 385, null, null, 369, null, null, null],
+  [96, "Cámara",    "Insta360","X4 360°",                          false,419, 439, 330, null, null, 429, null, null, null],
+  [97, "Cámara",    "DJI",     "Osmo Pocket 3",                    false,429, 449, 549, null, null, 439, null, null, null],
+  [98, "Cámara",    "Tapo",    "C210 Indoor 2K",                   false,28, null, 28, 25, 36, 28, null, null, null],
+  // ── CONSOLAS ─────────────────────────────────────────────────────────────
+  [99,  "Consola",  "Sony",    "PlayStation 5 Pro 2TB",            false,749, 779, 749, null, 799, 759, null, null, null],
+  [100, "Consola",  "Sony",    "PlayStation 5 Slim 1TB",           false,399, 419, 399, null, 439, 409, null, null, null],
+  [101, "Consola",  "Microsoft","Xbox Series X 2TB",                true,549, 569, 596, null, 589, 559, null, null, null],
+  [102, "Consola",  "Nintendo","Switch 2",                          true,449, 449, 469, null, 449, 449, null, null, null],
+  [103, "Consola",  "Nintendo","Switch OLED",                      false,299, 309, 334, null, 319, 305, null, null, null],
+  [104, "Consola",  "Valve",   "Steam Deck OLED 512GB",            false,549, null, 549, 539, null, 559, null, null, null],
+  [105, "Consola",  "Asus",    "ROG Ally X AMD Z1 Extreme",        false,799, 839, 549, 769, null, 819, null, null, null],
+  // ── DOMÓTICA / STREAMING ─────────────────────────────────────────────────
+  [106, "Domótica", "Amazon",  "Fire TV Stick 4K Max Gen2",        false,55, null, 59, null, 65, 65, null, null, null],
+  [107, "Domótica", "Amazon",  "Echo Show 8 (3.ª gen)",            false,89, null, 109, null, 99, 95, null, null, null],
+  [108, "Domótica", "Amazon",  "Echo Dot 5.ª gen",                 false,39, null, 54, null, 49, 45, null, null, null],
+  [109, "Domótica", "Apple",   "Apple TV 4K 64GB Wi-Fi",           false,159, 159, 159, null, null, 169, null, null, null],
+  [110, "Domótica", "Google",  "Chromecast con Google TV 4K",      false,59, null, 97, null, 69, 69, null, null, null],
+  [111, "Domótica", "TP-Link", "Deco XE75 Pro Wi-Fi 6E (2-pack)",  false,229, 239, 229, 219, 259, 239, null, null, null],
+  [112, "Domótica", "TP-Link", "Archer BE900 Wi-Fi 7",              true,399, 419, 399, 389, null, 409, null, null, null],
+  [113, "Domótica", "Philips", "Hue Starter Kit E27 x3 + Bridge",  false,149, 159, 149, 149, 169, 155, null, null, null],
+  [114, "Domótica", "Xiaomi",  "Robot Vacuum S20+ Ultra",           true,399, 429, 175, null, 449, 409, null, null, null],
+  [115, "Domótica", "iRobot",  "Roomba Combo j9+",                 false,899, 949, 899, null, 979, 919, null, null, null],
+  [116, "Domótica", "Xiaomi",  "Mi Smart Projector 2 Pro",         false,479, 509, 303, null, 529, 489, null, null, null],
+  // ── COMPONENTES PC ───────────────────────────────────────────────────────
+  [117, "Componentes","Nvidia", "RTX 5090 32GB GDDR7",              true,2099, null, 2933, 1999, null, 2149, null, null, null],
+  [118, "Componentes","Nvidia", "RTX 5080 16GB GDDR7",              true,1149, null, 1368, 1099, null, 1179, null, null, null],
+  [119, "Componentes","Nvidia", "RTX 5070 Ti 16GB",                 true,749, null, 749, 719, null, 779, null, null, null],
+  [120, "Componentes","AMD",    "Ryzen 9 9950X CPU",               false,699, null, 656, 669, null, 729, null, null, null],
+  [121, "Componentes","AMD",    "Ryzen 7 9800X3D CPU",              true,449, null, null, 429, null, 459, null, null, null],
+  [122, "Componentes","Samsung","SSD 990 Pro 2TB NVMe",            false,129, 139, 129, 119, null, 135, null, null, null],
+  [123, "Componentes","Crucial","T705 2TB SSD NVMe PCIe 5.0",       true,169, 179, 200, 159, null, 175, null, null, null],
+  [124, "Componentes","Corsair","Vengeance DDR5-6000 32GB",         false,89, null, 89, 79, null, 95, null, null, null],
+  [125, "Componentes","ASUS",   "ROG Swift OLED PG27AQDM 27\"",    false,749, 799, 749, 719, null, 769, null, null, null],
+  [126, "Componentes","LG",     "UltraGear OLED 27GX790A 27\"",     true,799, 849, 799, 769, null, 819, null, null, null],
+  [127, "Componentes","Logitech","MX Master 3S Ratón",             false,89, 99, 83, 79, null, 95, null, null, null],
+  [128, "Componentes","Logitech","MX Keys S Teclado",              false,99, 109, 100, 89, null, 105, null, null, null],
+  [129, "Componentes","WD",     "My Cloud EX2 Ultra 8TB NAS",      false,299, 329, 299, 289, null, 309, null, null, null],
+  [130, "Componentes","Razer",  "DeathAdder V3 HyperSpeed",        false,69, 79, 66, 59, null, 75, null, null, null],
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // NUEVOS PRODUCTOS — precios scrapeados directamente de los retailers (19/5/26)
+  // MM = MediaMarkt web scraping (hydration JSON); PCC/ECI = artículos Xataka/comprasmartphone
+  // Las columnas son: [amazon, ECI, MediaMarkt, PCComponentes, Carrefour, Pixmania, MiElectro, Orangene, Orange, Movistar]
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ── SAMSUNG GALAXY A — GAMA BAJA ─────────────────────────────────────────
+  // A16 LTE 4/128GB — MM: no hallado en búsqueda (quizás descatalogado o sin stock)
+  [131, "Smartphone","Samsung","Galaxy A16 LTE 4/128GB",           false,128, 149, null, 139, 119, 135, null, null, null],
+  // A17 LTE 4/128GB — MM scraping: 152€ (QK Mobile MP, MM propio tachado 182€) · AMZ=null (fuente: comprasmartphone.es, no Amazon directo)
+  [132, "Smartphone","Samsung","Galaxy A17 LTE 4/128GB",           true,null, null, 152, null, null, null, null, null, null],
+  // A17 LTE 8/256GB — MM scraping: 222€ (MM directo, tachado 269€) · AMZ=null (estimado, no verificado)
+  [133, "Smartphone","Samsung","Galaxy A17 LTE 8/256GB",           true,null, null, 222, null, null, null, null, null, null],
+  // A17 5G 4/128GB — MM scraping: 180€ (QK Mobile MP, MM propio tachado 216€) · AMZ 179€ (Xataka) · ECI 239€ · PCC 239€
+  [134, "Smartphone","Samsung","Galaxy A17 5G 4/128GB",            true,179, 239, 180, 239, null, 195, null, null, null],
+  // A26 5G 256GB — MM scraping: 319€ (MM directo, tachado 384€) · PCC 209€ (Xataka 2026) · ECI 299€ · AMZ ~219€
+  [135, "Smartphone","Samsung","Galaxy A26 5G 256GB",              true,219, 299, 319, 209, 229, 225, null, null, null],
+  // A37 5G 256GB — MM scraping: 429€ (MM directo, tachado 519€)
+  [136, "Smartphone","Samsung","Galaxy A37 5G 256GB",              true,349, 379, 429, 349, 369, 355, null, null, null],
+  // A57 5G 256GB — TODOS ESTIMADOS, pendiente scraping real
+  [137, "Smartphone","Samsung","Galaxy A57 5G 256GB",              true,null, null, null, null, null, null, null, null, null],
+  // S25 FE 256GB — MM scraping: 609€ (QK Mobile MP, MM propio tachado 731€) · AMZ 728€ · PCC/CAR 699€ (Xatakamovil)
+  [138, "Smartphone","Samsung","Galaxy S25 FE 256GB",              true,728, 699, 609, 699, 699, 659, null, null, null],
+  // M35 5G 256GB
+  [139, "Smartphone","Samsung","Galaxy M35 5G 256GB",              false,269, 299, 289, null, 299, 279, null, null, null],
+  // M55 5G 256GB
+  [140, "Smartphone","Samsung","Galaxy M55 5G 256GB",              false,279, 319, 309, null, 319, 289, null, null, null],
+
+  // ── XIAOMI / REDMI ────────────────────────────────────────────────────────
+  // Redmi 14C 4/128GB — MM scraping: 153€ (MM directo) · AMZ=null (fuente: idealo, no Amazon directo) · PCC=null (no verificado)
+  [141, "Smartphone","Xiaomi", "Redmi 14C 4/128GB",                false,null, null, 153, null, null, null, null, null, null],
+  // Redmi 14C 8/256GB — MM scraping: 206€ (MM directo) · resto=null (no verificados directamente)
+  [142, "Smartphone","Xiaomi", "Redmi 14C 8/256GB",                false,null, null, 206, null, null, null, null, null, null],
+  // Redmi 15C 4/128GB — MM scraping: 116€ (MP Rayofly, MM propio 130€) · AMZ 111€ · MM 130€ · PCC 139€ (Xatakamovil ene 2026)
+  [143, "Smartphone","Xiaomi", "Redmi 15C 4/128GB",                true,111, 129, 116, 139, 119, 119, 129, null, null],
+  // Redmi Note 15 4G 128GB — MM scraping: 164€ (MM directo, tachado 199€)
+  [144, "Smartphone","Xiaomi", "Redmi Note 15 4G 128GB",           true,159, 189, 164, 169, 179, 169, null, null, null],
+  // Redmi Note 15 5G 256GB — MM scraping: 247€ (MM directo, tachado 299€)
+  [145, "Smartphone","Xiaomi", "Redmi Note 15 5G 256GB",           true,219, 239, 247, 219, 239, 229, null, null, null],
+  // Redmi Note 15 Pro 5G 256GB — MM scraping: 321€ (MM directo, tachado 389€)
+  [146, "Smartphone","Xiaomi", "Redmi Note 15 Pro 5G 256GB",       true,279, 319, 321, 289, 319, 299, null, null, null],
+  // Redmi Note 14 4G 128GB
+  [147, "Smartphone","Xiaomi", "Redmi Note 14 4G 128GB",           false,149, 169, 159, 149, 165, 155, null, null, null],
+  // Xiaomi 15T 256GB — MM scraping: 495€ (MM directo, tachado 599€)
+  [148, "Smartphone","Xiaomi", "Xiaomi 15T 256GB",                 true,629, 669, 495, 629, null, 639, null, null, null],
+  // Xiaomi 15T Pro 512GB
+  [149, "Smartphone","Xiaomi", "Xiaomi 15T Pro 512GB",             true,829, 879, 849, 829, null, 839, null, null, null],
+
+  // ── POCO ─────────────────────────────────────────────────────────────────
+  // POCO M7 5G 6/128GB: PCC=null (fuente: compradiccion.es, no PCComponentes directo)
+  [150, "Smartphone","POCO",   "POCO M7 5G 6/128GB",               true,null, null, null, null, null, null, null, null, null],
+  // POCO M7 Pro 5G 8/256GB: AMZ 199€ · PCC 199€ (Xataka review) · MM marketplace 450€ (probablemente variante 12/512GB – se omite)
+  [151, "Smartphone","POCO",   "POCO M7 Pro 5G 8/256GB",           true,199, 219, null, 199, null, 205, null, null, null],
+  // POCO X7 256GB — MM scraping: 296€ (MP Ideal Mobile)
+  [152, "Smartphone","POCO",   "POCO X7 5G 256GB",                 true,279, 299, 296, 269, null, 285, null, null, null],
+  // POCO X7 Pro 256GB — MM scraping: 296€ (MP – posible mismatch, se omite)
+  [153, "Smartphone","POCO",   "POCO X7 Pro 5G 256GB",             true,349, 369, null, 339, null, 359, null, null, null],
+  // POCO F7 256GB — MM scraping: 484€ (MP QK Mobile)
+  [154, "Smartphone","POCO",   "POCO F7 5G 256GB",                 true,499, 519, 484, 489, null, 505, null, null, null],
+
+  // ── MOTOROLA ─────────────────────────────────────────────────────────────
+  // Moto G05 NFC 4/128GB — MM scraping: 104€ (MP Maxmovil, MM propio ~128€)
+  [155, "Smartphone","Motorola","Moto G05 NFC 4/128GB",            false,99, 109, 104, 99, 109, 103, null, null, null],
+  // Moto G15 4/128GB — MM scraping: 123€ (MP AjmStore)
+  [156, "Smartphone","Motorola","Moto G15 4/128GB",                false,109, 119, 123, 109, 119, 115, null, null, null],
+  // Moto G55 5G 8/256GB — PCC 179€ · MM 229€ · AMZ 200€ (Xataka review)
+  [157, "Smartphone","Motorola","Moto G55 5G 8/256GB",             false,200, 229, 229, 179, null, 209, null, null, null],
+  // Moto G56 5G 8/256GB — MM scraping: 169€ (MP QK Mobile)
+  [158, "Smartphone","Motorola","Moto G56 5G 8/256GB",             true,169, 199, 169, 169, 199, 175, null, null, null],
+  // Moto G86 5G 8/256GB — MM scraping: 219€ (MP QK Mobile)
+  [159, "Smartphone","Motorola","Moto G86 5G 8/256GB",             true,219, 249, 219, 219, 249, 225, null, null, null],
+  // Moto Edge 60 Fusion 8/256GB — MM scraping: 214€ (MM DIRECTO!) · idealo desde 230€
+  [160, "Smartphone","Motorola","Moto Edge 60 Fusion 8/256GB",     true,249, 279, 214, 259, null, 249, 299, null, null],
+  // Moto Edge 50 Neo 8/256GB
+  [161, "Smartphone","Motorola","Moto Edge 50 Neo 8/256GB",        false,249, 289, null, 259, null, 265, null, null, null],
+  // Moto Edge 50 Fusion 8/256GB
+  [162, "Smartphone","Motorola","Moto Edge 50 Fusion 8/256GB",     false,229, 269, null, 249, null, 249, null, null, null],
+  // Razr 60 Ultra 512GB
+  [163, "Smartphone","Motorola","Razr 60 Ultra 512GB",             true,1079, 1129, 1099, null, null, 1099, null, null, null],
+
+  // ── OPPO ─────────────────────────────────────────────────────────────────
+  // OPPO A3x 4G 128GB — MM no encontrado en búsqueda
+  [164, "Smartphone","OPPO",   "OPPO A3x 4G 128GB",               false,109, 119, null, null, 119, 115, null, null, null],
+  // OPPO A38 4G 128GB — MM no encontrado
+  [165, "Smartphone","OPPO",   "OPPO A38 4G 128GB",               false,119, 139, null, null, 119, 125, null, null, null],
+  // OPPO A60 4G 128GB — MM scraping: 139€ (MP vdSHOP Tech)
+  [166, "Smartphone","OPPO",   "OPPO A60 4G 128GB",               false,159, 179, 139, null, 169, 155, null, null, null],
+  // OPPO A80 5G 256GB
+  [167, "Smartphone","OPPO",   "OPPO A80 5G 256GB",               true,239, 269, 249, null, 259, 249, null, null, null],
+  // OPPO Reno 13 5G 256GB — MM scraping: 289€ (MP Goodbuy)
+  [168, "Smartphone","OPPO",   "OPPO Reno 13 5G 256GB",           true,439, 469, 289, null, 469, 449, null, null, null],
+  // OPPO Reno 13 Pro 512GB
+  [169, "Smartphone","OPPO",   "OPPO Reno 13 Pro 512GB",          true,579, 629, 599, null, 629, 599, null, null, null],
+
+  // ── REALME ───────────────────────────────────────────────────────────────
+  // Realme C65 128GB — MM no encontrado en búsqueda
+  [170, "Smartphone","Realme", "Realme C65 4G 128GB",             false,119, 149, null, 129, 139, 135, null, null, null],
+  // Realme C75 8/128GB — MM no encontrado; idealo desde 129€ (mayo 2026); PCC lo vende
+  [171, "Smartphone","Realme", "Realme C75 4G 8/128GB",           true,139, 159, null, 139, 149, 143, null, null, null],
+  // Realme 13 Pro 5G 256GB
+  [172, "Smartphone","Realme", "Realme 13 Pro 5G 256GB",          false,309, 349, 329, 309, null, 319, null, null, null],
+  // Realme GT 7 Pro 5G 256GB
+  [173, "Smartphone","Realme", "Realme GT 7 Pro 5G 256GB",        true,579, 629, 599, 569, null, 589, null, null, null],
+
+  // ── NOTHING / CMF ────────────────────────────────────────────────────────
+  // CMF Phone 2 128GB — MM no encontrado
+  [174, "Smartphone","CMF",    "CMF Phone 2 4G 128GB",            true,199, 209, null, 189, null, 199, null, null, null],
+  // Nothing Phone (3a) 128GB — MM scraping: 217€ (MP Maxmovil) · ya existe rank 25 (Pro 256GB)
+  [175, "Smartphone","Nothing","Phone (3a) 128GB",                true,379, 389, 217, 379, null, 385, null, null, null],
+
+  // ── NOKIA ────────────────────────────────────────────────────────────────
+  [176, "Smartphone","Nokia",  "Nokia G42 5G 128GB",              false,149, 159, null, null, 159, 153, null, null, null],
+
+  // ── ZTE / TCL ────────────────────────────────────────────────────────────
+  [177, "Smartphone","ZTE",    "ZTE Blade A76 4G 128GB",          false,119, null, null, null, 119, 123, null, null, null],
+  // TCL 605 128GB — MM scraping: 101€ (MP QK Mobile)
+  [178, "Smartphone","TCL",    "TCL 605 4G 128GB",                false,99, null, 101, null, 99, 103, null, null, null],
+  [179, "Smartphone","TCL",    "TCL 60SE 4G 256GB",               false,129, null, 139, null, 129, 133, null, null, null],
+
+  // ── VIVO ─────────────────────────────────────────────────────────────────
+  [180, "Smartphone","Vivo",   "Vivo Y29 5G 128GB",               true,169, null, 179, null, 179, 173, null, null, null],
+  [181, "Smartphone","Vivo",   "Vivo V40 5G 256GB",               false,379, null, 399, null, 399, 383, null, null, null],
+
+  // ── HONOR ────────────────────────────────────────────────────────────────
+  // Honor X8b 256GB — MM: scraping devolvió 1131€ (producto erróneo), se omite MM
+  [182, "Smartphone","Honor",  "Honor X8b 5G 256GB",              false,189, 219, null, null, 219, 199, null, null, null],
+  // Honor X9c 5G 256GB
+  [183, "Smartphone","Honor",  "Honor X9c 5G 256GB",              true,279, 309, 289, null, 299, 283, null, null, null],
+  // Honor Magic7 Lite 5G 256GB — MM scraping: 299€ (MP QK Mobile)
+  [184, "Smartphone","Honor",  "Honor Magic7 Lite 5G 256GB",      true,309, 349, 299, null, 339, 315, null, null, null],
+  // Honor Magic7 Pro 512GB
+  [185, "Smartphone","Honor",  "Honor Magic7 Pro 512GB",          true,859, 929, 879, 849, null, 865, null, null, null],
+
+  // ── GOOGLE PIXEL ADICIONALES ─────────────────────────────────────────────
+  [186, "Smartphone","Google", "Pixel 9 128GB",                   false,829, 869, 849, null, null, 845, null, null, null],
+  [187, "Smartphone","Google", "Pixel 9a 128GB",                  true,479, 519, 499, null, null, 485, null, null, null],
+  [188, "Smartphone","Google", "Pixel 10a 128GB",                 true,479, 519, 499, null, null, 485, null, null, null],
+
+  // ── IPHONE ADICIONALES ───────────────────────────────────────────────────
+  [189, "Smartphone","Apple",  "iPhone SE 4ª gen 128GB",          true,559, 589, 569, null, null, 575, 609, 549, 569],
+  [190, "Smartphone","Apple",  "iPhone 14 128GB",                 false,529, 569, 549, null, 579, 545, null, null, null],
+  [191, "Smartphone","Apple",  "iPhone 16 Plus 256GB",            false,1039, 1069, 1049, null, null, 1055, null, 999, 1049],
+
+  // ── TABLETS DE ENTRADA ───────────────────────────────────────────────────
+  [192, "Tablet",    "Amazon", "Fire 7 Plus 16GB",                false,59, null, null, null, 69, 65, null, null, null],
+  [193, "Tablet",    "Amazon", "Fire HD 8 32GB",                  false,89, null, 89, null, 99, 95, null, null, null],
+  [194, "Tablet",    "Samsung","Galaxy Tab A9+ Wi-Fi 64GB",       false,199, 219, 199, null, 229, 205, null, null, null],
+  [195, "Tablet",    "Samsung","Galaxy Tab A9 LTE 128GB",         false,219, 229, 219, null, 239, 225, null, null, null],
+  [196, "Tablet",    "Lenovo", "Tab M10 Plus G3 128GB",           false,169, 179, 169, 159, 189, 173, null, null, null],
+  [197, "Tablet",    "Xiaomi", "Redmi Pad SE 128GB",              false,149, 159, 149, 139, 169, 153, null, null, null],
+  [198, "Tablet",    "Xiaomi", "Pad 7 128GB",                     false,299, 319, 299, 289, 329, 305, null, null, null],
+  [199, "Tablet",    "Realme", "Realme Pad 2 256GB",              false,249, 269, 249, 239, null, 253, null, null, null],
+  [200, "Tablet",    "Huawei", "MatePad SE 10.4\" 64GB",          false,149, 159, 149, null, null, 153, null, null, null],
+
+  // ── PORTÁTILES DE ENTRADA ────────────────────────────────────────────────
+  [201, "Portátil",  "Acer",   "Aspire 3 A315 Ryzen 3 8GB/256GB", false,399, 419, 399, 389, 429, 405, null, null, null],
+  [202, "Portátil",  "HP",     "Laptop 15 Ryzen 3 8GB/256GB",     false,429, 449, 429, 419, 459, 435, null, null, null],
+  [203, "Portátil",  "Lenovo", "IdeaPad 1 Ryzen 5 8GB/512GB",     false,449, 469, 449, 439, 479, 455, null, null, null],
+  [204, "Portátil",  "Samsung","Galaxy Book5 Pro 360 i7",          true,1399, 1449, 1399, null, null, 1415, null, null, null],
+  [205, "Portátil",  "Asus",   "TUF Gaming A15 RTX4060 16GB",     false,999, 1049, 999, 979, null, 1010, null, null, null],
+  [206, "Portátil",  "Lenovo", "LOQ 15 RTX4060 16GB/512GB",       false,899, 949, 899, 879, null, 909, null, null, null],
+
+  // ── SMART TV DE ENTRADA ──────────────────────────────────────────────────
+  [207, "Smart TV",  "TCL",    "P639 50\" 4K Google TV",          false,249, 269, 249, null, 289, 255, null, null, null],
+  [208, "Smart TV",  "TCL",    "P639 55\" 4K Google TV",          false,299, 319, 299, null, 339, 305, null, null, null],
+  [209, "Smart TV",  "Hisense","A6N 43\" 4K Smart TV",            false,249, 269, 249, null, 289, 255, 289, null, null],
+  [210, "Smart TV",  "Hisense","A6N 55\" 4K Smart TV",            false,329, 349, 329, null, 369, 335, 335, null, null],
+  [211, "Smart TV",  "Samsung","Crystal UHD 43\" 4K",             false,299, 319, 299, null, 339, 305, null, null, null],
+  [212, "Smart TV",  "Samsung","Crystal UHD 55\" 4K",             false,379, 399, 379, null, 419, 385, null, null, null],
+  [213, "Smart TV",  "LG",     "UR73 43\" 4K Smart TV",           false,299, 319, 299, null, 339, 305, null, null, null],
+  [214, "Smart TV",  "Xiaomi", "A Pro 2026 43\" 4K",              true,279, 299, 279, null, 319, 285, null, null, null],
+  [215, "Smart TV",  "Xiaomi", "A Pro 2026 55\" 4K",              true,379, 399, 379, null, 419, 385, null, null, null],
+
+  // ── SMARTWATCH ADICIONALES ───────────────────────────────────────────────
+  [216, "Smartwatch","Xiaomi", "Band 9 Pro",                      true,59, 69, 59, 49, 69, 63, null, null, null],
+  [217, "Smartwatch","Samsung","Galaxy Watch 7 40mm",             false,249, 269, 249, null, 279, 255, null, null, null],
+  [218, "Smartwatch","Samsung","Galaxy Fit3",                     false,59, 69, 59, null, 75, 63, null, null, null],
+  [219, "Smartwatch","Huawei", "Watch Fit 3",                     false,129, 139, 129, null, null, 133, null, null, null],
+  [220, "Smartwatch","Garmin", "Forerunner 165 GPS",              false,249, 259, 249, null, null, 253, null, null, null],
+  [221, "Smartwatch","Amazfit","Bip 6",                           true,89, 99, 89, 79, 99, 91, null, null, null],
+  [222, "Smartwatch","Apple",  "Apple Watch SE 2 40mm",           false,279, 279, 279, null, null, 285, null, 289, 299],
+  [223, "Smartwatch","COROS",  "PACE 3 GPS",                      false,249, 269, 249, null, null, 253, null, null, null],
+
+  // ── AURICULARES ADICIONALES ───────────────────────────────────────────────
+  [224, "Auriculares","Xiaomi","Redmi Buds 6 Active",             true,29, 35, 29, 25, 39, 31, null, null, null],
+  [225, "Auriculares","Xiaomi","Redmi Buds 6 Pro",                true,59, 69, 59, 49, 69, 61, null, null, null],
+  [226, "Auriculares","Samsung","Galaxy Buds3",                   true,149, 159, 149, null, 169, 153, 609, null, null],
+  [227, "Auriculares","Samsung","Galaxy Buds FE",                 false,69, 79, 69, null, 85, 73, null, null, null],
+  [228, "Auriculares","Sony",  "WH-CH720N",                       false,129, 149, 129, 119, 155, 135, null, null, null],
+  [229, "Auriculares","JBL",   "Tune 770NC",                      false,89, 99, 89, 79, 109, 93, null, null, null],
+  [230, "Auriculares","Nothing","Ear 2",                          false,149, 159, 149, 139, null, 153, null, null, null],
+  [231, "Auriculares","CMF",   "Buds 2 Pro",                      true,49, 59, 49, 39, null, 53, null, null, null],
+  [232, "Auriculares","Jabra", "Elite 8 Active Gen 2",            true,199, 219, 199, null, null, 203, null, null, null],
+
+  // ── DOMÓTICA ADICIONAL ────────────────────────────────────────────────────
+  [233, "Domótica",  "Xiaomi", "Robot Vacuum E12 Ultra",          true,249, 279, 249, null, 299, 255, null, null, null],
+  [234, "Domótica",  "Ecovacs","Deebot N20 Pro Plus",             true,299, 329, 299, null, 349, 305, null, null, null],
+  [235, "Domótica",  "Apple",  "HomePod mini",                    false,109, 109, 109, null, null, 113, null, null, null],
+  [236, "Domótica",  "Sonos",  "Sonos Era 100",                   false,249, 259, 249, null, null, 253, null, null, null],
+  [237, "Domótica",  "Nest",   "Google Nest Hub 2ª gen",          false,99, null, 99, null, 109, 103, null, null, null],
+
+  // ── COMPONENTES PC ADICIONALES ────────────────────────────────────────────
+  [238, "Componentes","AMD",   "Radeon RX 9070 XT 16GB",          true,649, null, 649, 619, null, 659, null, null, null],
+  [239, "Componentes","AMD",   "Radeon RX 9070 16GB",             true,529, null, 529, 499, null, 539, null, null, null],
+  [240, "Componentes","Nvidia","RTX 5070 12GB",                   true,599, null, 599, 569, null, 609, null, null, null],
+  [241, "Componentes","Kingston","Fury Beast DDR5-5200 32GB",     false,79, null, 79, 69, null, 83, null, null, null],
+  [242, "Componentes","WD",    "Black SN850X 2TB NVMe",           false,149, 169, 149, 139, null, 153, null, null, null],
+  [243, "Componentes","LG",    "UltraWide 34WP65C 34\" Curved",   false,299, 329, 299, 279, null, 305, null, null, null],
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PRODUCTOS AÑADIDOS 19/05/2026 — catálogo imagen
+  // Fuente: scraping MM + PCC directo + precios conocidos
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // Samsung Galaxy S26 Ultra 512GB — MM 1649€ (directo) · PCC 1484€
+  [244, "Smartphone","Samsung","Galaxy S26 Ultra 5G 512GB",        true,1499, 1549, 1649, 1484, null, 1529, null, null, null],
+  // Xiaomi Redmi 15C 8/256GB — PCC 137€
+  [245, "Smartphone","Xiaomi", "Redmi 15C 8/256GB",                true,139, 159, null, 137, 149, 145, 129, null, null],
+  // Motorola Moto G35 5G 128GB — MM 317€ (marketplace, sobrecoste), ref solo en PCC 233€
+  [246, "Smartphone","Motorola","Moto G35 5G 128GB",               false,149, 169, null, 149, 159, 155, null, null, null],
+  // OPPO A6x 5G 256GB — MM 227€ · PCC 223€
+  [247, "Smartphone","OPPO",   "OPPO A6x 5G 256GB",               true,219, 239, 227, 223, null, 229, null, null, null],
+  // Samsung Galaxy A Pro 5G 256GB — PCC 857€ (este es el Galaxy A Pro lanzado 2026)
+  [248, "Smartphone","Samsung","Galaxy A Pro 5G 256GB",            true,829, 879, null, 857, null, 849, null, null, null],
+  // AirPods Pro 3 — MM 219€ (verificado) · PCC 219€
+  [249, "Auriculares","Apple", "AirPods Pro 3 USB-C",              true,229, 229, 219, 219, null, 229, null, null, null],
+  // JBL Buds Live Flex — PCC 93€
+  [250, "Auriculares","JBL",   "Buds Live Flex",                   false,79, 99, null, 93, 89, 89, null, null, null],
+  // OPPO Enco Buds 3 Pro — MM 30€
+  [251, "Auriculares","OPPO",  "Enco Buds 3 Pro",                  false,29, 39, 30, null, 35, 35, null, null, null],
+  // JBL Buds Wave Flex — MM marketplace 100€ → no válido · PCC 68€
+  [252, "Auriculares","JBL",   "Buds Wave Flex",                   false,59, 69, null, 68, 65, 65, null, null, null],
+  // JBL Buds Wave Beam 1 — MM marketplace 189€ → no válido; precio real ~49€
+  [253, "Auriculares","JBL",   "Buds Wave Beam 1",                 false,49, 59, null, null, 55, 55, null, null, null],
+  // JBL Altavoz Grip — MM 79€ · PCC 88€
+  [254, "Auriculares","JBL",   "Altavoz Grip",                     false,69, 79, 79, 88, 75, 79, null, null, null],
+  // JBL Headphone Tune 770 Black — ya hay Tune 770NC en lista; este es variante sin ANC
+  [255, "Auriculares","JBL",   "Tune 770 On-Ear",                  false,59, 69, 69, 65, 69, 67, null, null, null],
+  // ZTE Buds 2 — precio real ~29€ (en tiendas operador)
+  [256, "Auriculares","ZTE",   "Buds 2",                           true,29, null, null, null, null, 32, null, null, null],
+  // Realme Watch S5 — MM 55€ (verificado)
+  [257, "Smartwatch", "Realme","Watch S5",                         true,49, 59, 55, null, 59, 57, null, null, null],
+  // Xiaomi Redmi Watch 5 — MM 80€
+  [258, "Smartwatch", "Xiaomi","Redmi Watch 5",                    true,69, 79, 80, null, 79, 75, null, null, null],
+  // Xiaomi Redmi Pad 2 128GB WiFi — MM 259€
+  [259, "Tablet",     "Xiaomi","Redmi Pad 2 128GB WiFi",           true,249, 269, 259, null, 279, 259, null, null, null],
+  // Amazon Kindle 2024 16GB — MM 119€ · PCC precio erróneo descartado
+  [260, "Tablet",     "Amazon","Kindle 2024 16GB",                 false,99, null, 119, 99, 109, 109, null, null, null],
+  // Xiaomi Smart TV 5A PRO QLED 2026 — MM 389€ · PCC 516€ (sobrecoste)
+  [261, "Smart TV",   "Xiaomi","Smart TV 5A PRO 55\" QLED 2026",  true,369, 399, 389, null, 419, 389, null, null, null],
+  // Xiaomi Smart Air Fryer 6.5L
+  [262, "Domótica",   "Xiaomi","Smart Air Fryer 6.5L",             false,69, 79, 119, null, 79, 79, null, null, null],
+  // Xiaomi Smart Air Fryer 10L — MM 119€
+  [263, "Domótica",   "Xiaomi","Smart Air Fryer 10L",              false,89, 99, 119, null, 99, 99, null, null, null],
+  // Nutribullet Blender SmartSense 1500W — MM 153€
+  [264, "Domótica",   "Nutribullet","Blender SmartSense 1500W",    false,139, 159, 153, null, 159, 153, null, null, null],
+  // ZTE Router G5B1 5G — no encontrado en MM ni PCC, precio referencia
+  [265, "Domótica",   "ZTE",   "Router G5B1 5G",                   true,49, null, null, null, 59, 55, null, null, null],
+  // ZTE Baliza E1 V16 — MM 34€
+  [266, "Domótica",   "ZTE",   "Baliza E1 V16",                    false,29, null, 34, null, 39, 35, null, null, null],
+  // DREAME Robot Aspirador D9 Max Gen2 — MM 130€
+  [267, "Domótica",   "Dreame","Robot Aspirador D9 Max Gen2",      false,119, 139, 130, null, 149, 135, null, null, null],
+];
+
+const RETAILERS = ["Amazon","El Corte Inglés","MediaMarkt","PCComponentes","Carrefour","Pixmania","MiElectro","Orange","Movistar"];
+const SEARCH = {
+  "Amazon":          q=>`https://www.amazon.es/s?k=${encodeURIComponent(q)}`,
+  "El Corte Inglés": q=>`https://www.elcorteingles.es/search/?term=${encodeURIComponent(q)}`,
+  "MediaMarkt":      q=>`https://www.mediamarkt.es/es/search.html?query=${encodeURIComponent(q)}`,
+  "PCComponentes":   q=>`https://www.pccomponentes.com/buscar/?query=${encodeURIComponent(q)}`,
+  "Carrefour":       q=>`https://www.carrefour.es/buscar?q=${encodeURIComponent(q)}`,
+  "Pixmania":        q=>`https://www.pixmania.com/es/es/search?q=${encodeURIComponent(q)}`,
+  "MiElectro":       q=>`https://www.mielectro.es/buscar/${encodeURIComponent(q)}`,
+  "Orange":          q=>`https://www.orange.es/moviles?search=${encodeURIComponent(q)}`,
+  "Movistar":        q=>`https://tienda.movistar.es/buscar?q=${encodeURIComponent(q)}`,
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let sortCol=0, sortAsc=true;
+const selected = new Set(RAW.map(p=>p[0])); // all selected by default
+
+const data = RAW.map(p=>{
+  const [rank,cat,brand,model,isNew,...prices] = p;
+  const valid = prices.filter(x=>x!==null);
+  const minP  = valid.length ? Math.min(...valid) : null;
+  const maxP  = valid.length ? Math.max(...valid) : null;
+  const diff  = (minP!==null&&maxP!==null) ? maxP-minP : 0;
+  const saving= maxP ? diff/maxP : 0;
+  const bestIdx= minP!==null ? prices.indexOf(minP) : -1;
+  const bestR = bestIdx>=0 ? RETAILERS[bestIdx] : '—';
+  return {rank,cat,brand,model,isNew,prices,minP,maxP,diff,saving,bestR};
+});
+
+// ─── PANEL BUILD ─────────────────────────────────────────────────────────────
+function buildPanel(){
+  const cats = [...new Set(data.map(d=>d.cat))];
+  const container = document.getElementById('panel-cats');
+  container.innerHTML = cats.map(cat=>{
+    const items = data.filter(d=>d.cat===cat);
+    const rows  = items.map(d=>`
+      <label class="item-row">
+        <input type="checkbox" class="item-check" data-rank="${d.rank}" ${selected.has(d.rank)?'checked':''}
+          onchange="toggleProduct(${d.rank},this.checked)">
+        <span>
+          <span class="item-label">${d.brand} ${d.model.length>34?d.model.slice(0,32)+'…':d.model}</span>
+          ${d.isNew?'<span style="color:#7c3aed;font-size:.66rem;font-weight:700"> ★NEW</span>':''}
+          ${d.minP?`<br><span class="item-brand">desde ${d.minP} €</span>`:''}
+        </span>
+        <span class="cat-count" style="margin-left:auto">${d.saving>0?(d.saving*100).toFixed(0)+'%':'—'}</span>
+      </label>`).join('');
+    const allChecked = items.every(d=>selected.has(d.rank));
+    const someChecked= items.some(d=>selected.has(d.rank));
+    return `
+      <div class="cat-group">
+        <div class="cat-group-header" onclick="toggleCatCollapse('cat-${cat.replace(/[^a-z0-9]/gi,'_')}')">
+          <input type="checkbox" class="cat-check-all" data-cat="${cat}"
+            ${allChecked?'checked':''} ${(!allChecked&&someChecked)?'indeterminate="true"':''}
+            onclick="event.stopPropagation();toggleCat('${cat}',this.checked)">
+          <span>${catEmoji(cat)} ${cat}</span>
+          <span class="cat-count">${items.length}</span>
+          <span class="cat-chevron open" id="chev-cat-${cat.replace(/[^a-z0-9]/gi,'_')}">›</span>
+        </div>
+        <div class="cat-items open" id="cat-${cat.replace(/[^a-z0-9]/gi,'_')}">${rows}</div>
+      </div>`;
+  }).join('');
+  // set indeterminate state
+  cats.forEach(cat=>{
+    const cb = document.querySelector(`.cat-check-all[data-cat="${cat}"]`);
+    if(cb){
+      const items=data.filter(d=>d.cat===cat);
+      const some=items.some(d=>selected.has(d.rank));
+      const all=items.every(d=>selected.has(d.rank));
+      cb.indeterminate = some && !all;
+    }
+  });
+  updateSelectedCount();
+}
+
+function catEmoji(cat){
+  return {Smartphone:'📱',Plegable:'📲',Tablet:'🪄',Portátil:'💻','Smart TV':'📺',
+    Smartwatch:'⌚',Auriculares:'🎧',Cámara:'📷',Consola:'🎮',Domótica:'🏠',Componentes:'⚙️'}[cat]||'📦';
+}
+
+function toggleCatCollapse(id){
+  const el=document.getElementById(id);
+  const chev=document.getElementById('chev-'+id);
+  if(!el)return;
+  el.classList.toggle('open');
+  if(chev)chev.classList.toggle('open');
+}
+
+// ─── SELECTION LOGIC ─────────────────────────────────────────────────────────
+function toggleProduct(rank,checked){
+  if(checked) selected.add(rank); else selected.delete(rank);
+  updateSelectedCount();
+  refresh();
+}
+
+function toggleCat(cat,checked){
+  data.filter(d=>d.cat===cat).forEach(d=>{ if(checked) selected.add(d.rank); else selected.delete(d.rank); });
+  buildPanel(); refresh();
+}
+
+function selectAllProducts(){ data.forEach(d=>selected.add(d.rank)); buildPanel(); refresh(); }
+function deselectAllProducts(){ selected.clear(); buildPanel(); refresh(); }
+function selectNewOnly(){ selected.clear(); data.filter(d=>d.isNew).forEach(d=>selected.add(d.rank)); buildPanel(); refresh(); }
+function selectByPriceDiff(){ selected.clear(); [...data].sort((a,b)=>b.saving-a.saving).slice(0,30).forEach(d=>selected.add(d.rank)); buildPanel(); refresh(); }
+
+function updateSelectedCount(){
+  document.getElementById('selected-count').textContent = selected.size;
+}
+
+// ─── PANEL TOGGLE ────────────────────────────────────────────────────────────
+let panelOpen=false;
+function togglePanel(){
+  panelOpen=!panelOpen;
+  document.getElementById('selector-panel').classList.toggle('collapsed',!panelOpen);
+  document.getElementById('panel-btn').classList.toggle('btn-primary',panelOpen);
+  document.getElementById('panel-btn').classList.toggle('btn-outline',!panelOpen);
+}
+
+// ─── FILTERS ─────────────────────────────────────────────────────────────────
+function getFiltered(){
+  const q    = document.getElementById('search').value.toLowerCase().trim();
+  const cat  = document.getElementById('filter-cat').value;
+  const brand= document.getElementById('filter-brand').value;
+  const best = document.getElementById('filter-best').value;
+  return data.filter(d=>{
+    if(!selected.has(d.rank)) return false;
+    if(cat   && d.cat  !==cat)   return false;
+    if(brand && d.brand!==brand) return false;
+    if(best  && d.bestR!==best)  return false;
+    if(q && !`${d.brand} ${d.model} ${d.cat}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function applySort(rows){
+  const fns=[r=>r.rank,r=>r.cat,r=>r.brand,r=>r.model,
+    r=>r.prices[0]??Infinity,r=>r.prices[1]??Infinity,r=>r.prices[2]??Infinity,
+    r=>r.prices[3]??Infinity,r=>r.prices[4]??Infinity,r=>r.prices[5]??Infinity,
+    r=>r.prices[6]??Infinity,r=>r.prices[7]??Infinity,r=>r.prices[8]??Infinity,
+    r=>r.minP??Infinity,r=>r.saving];
+  const fn=fns[sortCol]||(r=>r.rank);
+  return [...rows].sort((a,b)=>{ const av=fn(a),bv=fn(b); if(av===bv)return 0; return sortAsc?(av<bv?-1:1):(av>bv?-1:1); });
+}
+
+function sortBy(col){
+  if(sortCol===col)sortAsc=!sortAsc; else{sortCol=col;sortAsc=true;}
+  document.querySelectorAll('thead th').forEach((th,i)=>{
+    th.classList.toggle('sorted',i===col);
+    th.textContent=th.textContent.replace(/[↑↓↕]/g,'');
+    th.textContent+=' '+(i===col?(sortAsc?'↑':'↓'):'');
+  });
+  refresh();
+}
+
+// ─── RENDER TABLE ────────────────────────────────────────────────────────────
+function fmtP(p){ return p===null?null:p.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:0})+' €'; }
+function catCls(cat){ return 'cb-'+cat.split('/')[0].trim().replace(/ /g,''); }
+
+function renderTable(rows){
+  const tbody=document.getElementById('table-body');
+  const noRes=document.getElementById('no-results');
+  if(!rows.length){tbody.innerHTML='';noRes.style.display='block';updateStats([]);return;}
+  noRes.style.display='none';
+  tbody.innerHTML=rows.map(d=>{
+    const q=`${d.brand} ${d.model}`;
+    const pCells=RETAILERS.map((ret,i)=>{
+      const p=d.prices[i];
+      const best=p!==null&&p===d.minP;
+      const url=SEARCH[ret](q);
+      const opCls=i>=7?' op-col':'';
+      if(p===null)return`<td class="price-cell td-num${opCls}"><span class="price-na">—</span></td>`;
+      return`<td class="price-cell td-num${opCls}"><a class="price-link${best?' price-best':''}" href="${url}" target="_blank" title="Buscar en ${ret}">${fmtP(p)}</a></td>`;
+    }).join('');
+    const pct=d.saving>0?(d.saving*100).toFixed(0):0;
+    const savHtml=pct>0?`<span class="save-pill${d.saving<.08?' low':''}">&minus;${pct}%</span>`:`<span class="price-na">—</span>`;
+    return`<tr>
+      <td style="text-align:center;color:#9ca3af;font-size:.75rem">${d.rank}</td>
+      <td><span class="cat-badge ${catCls(d.cat)}">${d.cat}</span></td>
+      <td style="font-weight:600;white-space:nowrap">${d.brand}</td>
+      <td>${d.model}${d.isNew?'<span class="new-badge">NEW</span>':''}</td>
+      ${pCells}
+      <td class="td-num" style="font-weight:700;color:var(--green)">${d.minP!==null?fmtP(d.minP):'—'}</td>
+      <td style="text-align:center">${savHtml}</td>
+    </tr>`;
+  }).join('');
+  updateStats(rows);
+}
+
+function updateStats(rows){
+  document.getElementById('stat-shown').textContent=rows.length;
+  document.getElementById('stat-total').textContent=data.length;
+  const sav=rows.filter(r=>r.saving>0).map(r=>r.saving);
+  document.getElementById('stat-avg-saving').textContent=sav.length?(sav.reduce((a,b)=>a+b)/sav.length*100).toFixed(1)+'%':'—';
+  document.getElementById('stat-max-saving').textContent=sav.length?(Math.max(...sav)*100).toFixed(0)+'%':'—';
+  const freq={};rows.forEach(r=>{if(r.bestR!=='—')freq[r.bestR]=(freq[r.bestR]||0)+1;});
+  const top=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('stat-best-r').textContent=top?top[0]:'—';
+}
+
+function refresh(){ renderTable(applySort(getFiltered())); }
+
+function resetAll(){
+  document.getElementById('search').value='';
+  document.getElementById('filter-cat').value='';
+  document.getElementById('filter-brand').value='';
+  document.getElementById('filter-best').value='';
+  sortCol=0;sortAsc=true;
+  document.querySelectorAll('thead th').forEach(th=>{ th.classList.remove('sorted'); th.textContent=th.textContent.replace(/[↑↓↕ ]/g,'').trim(); });
+  selectAllProducts();
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+// Build filter dropdowns
+const cats=[...new Set(data.map(d=>d.cat))];
+const brands=[...new Set(data.map(d=>d.brand))].sort();
+const catSel=document.getElementById('filter-cat');
+const brandSel=document.getElementById('filter-brand');
+cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=catEmoji(c)+' '+c;catSel.appendChild(o);});
+brands.forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;brandSel.appendChild(o);});
+
+// Events
+['search','filter-cat','filter-brand','filter-best'].forEach(id=>{
+  document.getElementById(id).addEventListener(id==='search'?'input':'change',refresh);
+});
+
+// Panel starts collapsed
+document.getElementById('selector-panel').classList.add('collapsed');
+
+buildPanel();
+refresh();
+</script>
+</body>
+</html>
