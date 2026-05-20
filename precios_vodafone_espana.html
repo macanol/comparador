@@ -6,56 +6,194 @@
 <title>Vodafone España – Comparador de Precios (actualización semanal real)</title>
 
 <!--
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  ██████╗ ███████╗ ██████╗ ██╗      █████╗     ██████╗ ██████╗ ███████╗      ║
-║  ██╔══██╗██╔════╝██╔════╝ ██║     ██╔══██╗    ██╔══██╗██╔══██╗██╔════╝      ║
-║  ██████╔╝█████╗  ██║  ███╗██║     ███████║    ██████╔╝██████╔╝█████╗        ║
-║  ██╔══██╗██╔══╝  ██║   ██║██║     ██╔══██║    ██╔═══╝ ██╔══██╗██╔══╝        ║
-║  ██║  ██║███████╗╚██████╔╝███████╗██║  ██║    ██║     ██║  ██║███████╗      ║
-║  ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝    ╚═╝     ╚═╝  ╚═╝╚══════╝      ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║  🔴 NORMA ABSOLUTA — GRABAD A FUEGO — NUNCA IGNORAR 🔴                      ║
-║                                                                              ║
-║  CADA ACTUALIZACIÓN SEMANAL (O CUALQUIER EDICIÓN) DE ESTE FICHERO:          ║
-║                                                                              ║
-║  ✅ TODOS los precios deben ser REALES y SCRAPEADOS directamente             ║
-║     de cada retailer en la fecha de actualización.                           ║
-║                                                                              ║
-║  ✅ Retailers a scrapear: Amazon · El Corte Inglés · MediaMarkt ·            ║
-║     PCComponentes · Carrefour · Pixmania · MiElectro                        ║
-║     + operadores Orange · Movistar (si tienen precio libre)      ║
-║                                                                              ║
-║  ❌ PROHIBIDO usar precios de memoria, estimados, interpolados               ║
-║     o sacados de comparadores (idealo, kimovil, etc.).                       ║
-║                                                                              ║
-║  ❌ PROHIBIDO poner un precio si no se ha verificado en el retailer          ║
-║     directamente ese mismo día. En ese caso → null.                         ║
-║                                                                              ║
-║  ✅ Método de scraping MediaMarkt: JSON.parse hydration data                 ║
-║     (key: loaderData["0-33"].data.cofrProductAggregate                       ║
-║      .cofrPriceFeature.price.amount)                                        ║
-║                                                                              ║
-║  ✅ Método de scraping PCComponentes: LD+JSON ItemList                       ║
-║     (@type:ItemList → itemListElement[].item.offers.price)                  ║
-║     Filtrar refurbisheds (name contiene "Reacondicionado"/"Refurbished")    ║
-║                                                                              ║
-║  ⚠️  MiElectro: web SPA (Magento2+Cloudflare) — requiere Playwright/browser  ║
-║     hasta automatizar: revisar precios manualmente en mielectro.es           ║
-║                                                                              ║
-║  COLUMNAS DE PRECIOS (índices 5..14 en cada fila RAW):                      ║
-║  [5]=Amazon  [6]=ElCorteInglés  [7]=MediaMarkt  [8]=PCComponentes           ║
-║  [9]=Carrefour  [10]=Pixmania  [11]=MiElectro  [12]=Orange  [13]=Movistar   ║
-║                                                                              ║
-║                                                                              ║
-║  Última actualización completa: 19/05/2026                                  ║
-║  Próxima revisión obligatoria:  26/05/2026                                  ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+================================================================================
+  AI AGENT INSTRUCTIONS — LEE ESTO COMPLETO ANTES DE TOCAR NADA EN ESTE FICHERO
+================================================================================
+
+PROPÓSITO
+─────────
+Comparador semanal de precios de tecnología para Vodafone España (uso interno).
+Muestra precios actualizados de 9 retailers/operadores españoles para ~270 SKUs.
+
+BRANDING — NORMA INAMOVIBLE
+─────────────────────────────
+• Nombre siempre: "Vodafone España"  — NUNCA "Tech España" ni ninguna otra variante.
+• Logo: speech mark de Vodafone (círculo rojo #E60000 + burbuja blanca con agujero
+  interior rojo). SVG canónico del proyecto:
+    <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#E60000"/>
+    <path fill="white" d="M20,4 C11.2,4 4,11.2 4,20 C4,25.4 6.5,30.2 10.5,33.3
+    L8,39 L15.5,36 C17,36.6 18.4,37 20,37 C28.8,37 36,30.3 36,21.5
+    C36,12.7 28.8,4 20,4Z"/>
+    <circle cx="20" cy="21" r="8.5" fill="#E60000"/></svg>
+• Paleta de colores Vodafone:
+    Rojo primario : #E60000   Rojo oscuro: #B30000   Rojo pálido: #FFF0F0
+    Negro         : #0D0D0D   Gris oscuro: #4A4D4E   Gris medio : #999B9E
+    Púrpura       : #9C2AA0   Púrpura osc: #5E2750   Teal       : #00B0CA
+    Lima          : #A8B400   Amarillo   : #FECB00   Naranja    : #EB9800
+
+ENTORNO DE EJECUCIÓN
+─────────────────────
+• El agente Claude Code corre en un servidor cloud con política de red
+  RESTRICTIVA: todos los dominios externos devuelven 403 ("Host not in
+  allowlist"). NINGÚN retailer ni buscador es accesible desde el servidor.
+• Para ejecutar el scraper hay que hacerlo en la máquina local del usuario
+  (Windows), usando el script scraper.mjs incluido en este repositorio.
+• Comandos locales:
+    npm install
+    npm run setup     ← descarga Chromium (~120 MB, solo la primera vez)
+    npm run scrape    ← tarda ~1-2 h; sobreescribe este HTML con precios reales
+• Si ya tienes precios_raw.json de un scraping anterior:
+    npm run update
+
+FORMATO DE DATOS — ARRAY RAW
+──────────────────────────────
+const RAW = [
+  // [rank, cat, brand, model, isNew, amz, eci, mm, pcc, car, pix, mie, ora, mov]
+  //  [0]  [1]  [2]    [3]    [4]    [5]  [6]  [7] [8]  [9] [10] [11] [12] [13]
+];
+
+  rank    Número entero único, empieza en 1, sin huecos dentro de cada categoría.
+  cat     String: "Smartphone"|"Plegable"|"Tablet"|"Portátil"|"Smart TV"|
+                  "Smartwatch"|"Auriculares"|"Cámara"|"Consola"|"Domótica"|"Componentes"
+  brand   Marca tal cual aparece en la web del fabricante.
+  model   Nombre completo del modelo (capacidad, conectividad si aplica).
+  isNew   true si lanzado en los últimos 12 meses, false en caso contrario.
+  amz     Amazon.es            — precio en € redondeado al entero, o null
+  eci     El Corte Inglés      — precio en € redondeado al entero, o null
+  mm      MediaMarkt.es        — precio en € redondeado al entero, o null
+  pcc     PCComponentes.com    — precio en € redondeado al entero, o null
+  car     Carrefour.es         — precio en € redondeado al entero, o null
+  pix     Pixmania.com         — precio en € redondeado al entero, o null
+  mie     MiElectro.es         — precio en € redondeado al entero, o null
+  ora     Orange.es            — precio libre (pago único, sin contrato), o null
+  mov     Movistar tienda      — precio libre (pago único, sin contrato), o null
+
+REGLAS ABSOLUTAS SOBRE PRECIOS
+────────────────────────────────
+✅  Cada precio DEBE ser el que aparece en la web del retailer en la fecha
+    de scraping. Producto nuevo, en venta, enviado por el propio retailer
+    (o vendedor oficial). Precio con IVA incluido.
+✅  Si el producto no está en la web de ese retailer → null.
+✅  Si solo hay marketplaces de terceros (no el retailer propio) → null.
+✅  Si el producto está agotado o no disponible → null.
+❌  PROHIBIDO: precios de memoria, estimaciones, interpolaciones.
+❌  PROHIBIDO: precios sacados de comparadores externos
+    (idealo, kimovil, Xataka, Xatakamovil, comprasmartphone,
+    compradiccion, GSMArena, Camelcamelcamel, PriceRunner, etc.).
+❌  PROHIBIDO: poner un precio sin haberlo verificado directamente
+    en la URL del retailer ese mismo día de actualización.
+❌  PROHIBIDO: usar "precio medio" ni medias de ningún tipo.
+
+MÉTODOS DE SCRAPING POR RETAILER
+──────────────────────────────────
+Todos los retailers usan Cloudflare u otras protecciones. Requieren
+Playwright con Chromium headless + stealth. El script scraper.mjs
+ya implementa todo esto. No usar curl simple ni fetch básico.
+
+Amazon.es
+  URL búsqueda : https://www.amazon.es/s?k={query}
+  Selector CSS : [data-component-type="s-search-result"] .a-price-whole + .a-price-fraction
+  Notas        : Ignorar resultados "Reacondicionado"/"Usado"/"Vendido por terceros".
+                 Solo contar items cuyo vendedor sea "Amazon.es" o la marca oficial.
+
+El Corte Inglés (elcorteingles.es)
+  URL búsqueda : https://www.elcorteingles.es/search/?term={query}
+  Selector CSS : .product-price__current-price, .price__current
+  Notas        : Primer resultado relevante. Aceptar solo "Envío gratis" o vendido por ECI.
+
+MediaMarkt (mediamarkt.es)
+  URL búsqueda : https://www.mediamarkt.es/es/search.html?query={query}
+  Método 1     : Hydration JSON en <script type="application/json">
+                 loaderData[key].data.cofrProductAggregate.cofrPriceFeature.price.amount
+  Método 2 CSS : [data-test="product-price"] span, .ProductCard__price
+  Notas        : Ignorar marketplace (vendedor ≠ MediaMarkt Retail). Solo productos
+                 del stock propio de MediaMarkt.
+
+PCComponentes (pccomponentes.com)
+  URL búsqueda : https://www.pccomponentes.com/buscar/?query={query}
+  Método 1     : LD+JSON @type:ItemList → itemListElement[].item.offers.price
+                 Filtrar name que contenga "Reacondicionado" o "Refurbished".
+  Método 2 CSS : .product-card__price
+
+Carrefour (carrefour.es)
+  URL búsqueda : https://www.carrefour.es/buscar?q={query}
+  Selector CSS : .buyable-product-card__product-price, .ebx-result-price__main-price
+
+Pixmania (pixmania.com/es/es)
+  URL búsqueda : https://www.pixmania.com/es/es/search?q={query}
+  Método 1     : LD+JSON offers.price / offers.lowPrice
+  Método 2 CSS : [class*="price"]:not([class*="old"]):not([class*="before"])
+
+MiElectro (mielectro.es)
+  URL búsqueda : https://www.mielectro.es/buscar/{query-con-guiones}
+  Plataforma   : Magento 2 + Cloudflare → requiere waitUntil:"networkidle"
+  Método 1     : LD+JSON @type:Product → offers.price
+  Método 2 CSS : .price-wrapper .price, [data-price-type="finalPrice"] .price
+
+Orange (orange.es)
+  URL búsqueda : https://www.orange.es/smartphones?search={query}
+  Notas        : Solo precio LIBRE (pago único, sin contrato ni mensualidad).
+                 Ignorar cuotas mensuales y precios con permanencia.
+  Selector CSS : [class*="device-price"]:not([class*="monthly"]), [class*="price-one-pay"]
+
+Movistar (tienda.movistar.es)
+  URL búsqueda : https://tienda.movistar.es/buscar?q={query}
+  Notas        : Solo precio LIBRE (pago único, sin contrato). Mismo criterio Orange.
+  Selector CSS : [class*="price-free"], [class*="libre"], .device-price-total
+
+CATEGORÍAS Y EMOJI
+───────────────────
+Smartphone  📱   Plegable  📲   Tablet  🪄   Portátil  💻
+Smart TV    📺   Smartwatch ⌚   Auriculares 🎧   Cámara  📷
+Consola     🎮   Domótica  🏠   Componentes  ⚙️
+
+CÓMO AÑADIR NUEVOS PRODUCTOS
+──────────────────────────────
+1. Añadir la fila al array RAW con el siguiente rank disponible en su categoría.
+2. Poner isNew:true si se lanzó en los últimos 12 meses.
+3. Para los precios: poner null en todos los retailers y ejecutar npm run scrape.
+   NO INVENTAR NI ESTIMAR PRECIOS.
+
+ACTUALIZACIÓN SEMANAL — PROCEDIMIENTO
+───────────────────────────────────────
+1. En la máquina local: cd <repo> && npm run scrape
+2. El script sobreescribe este HTML con precios reales y actualiza las fechas.
+3. Commit + push al branch correspondiente.
+4. Las fechas "Última actualización" y "Próxima revisión" se actualizan
+   automáticamente por el script. Si se edita manualmente el HTML, actualizar
+   también las meta tags scrape-date y next-scrape.
+
+HISTORIAL DE CAMBIOS RELEVANTES
+─────────────────────────────────
+2026-05-20  Branding corregido Tech España→Vodafone España. Logo corregido.
+            Precios estimados/de comparadores → null. Script scraper.mjs añadido.
+2026-05-19  Versión inicial.
+
+  Última actualización completa: 19/05/2026
+  Próxima revisión obligatoria:  26/05/2026
+================================================================================
 -->
 
-<meta name="update-rule" content="PRECIOS REALES SCRAPEADOS — ver comentario de cabecera">
-<meta name="retailers" content="Amazon,ElCorteIngles,MediaMarkt,PCComponentes,Carrefour,Pixmania,MiElectro,Orange,Movistar">
-<meta name="scrape-date" content="2026-05-19">
-<meta name="next-scrape" content="2026-05-26">
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     META TAGS — legibles por herramientas y agentes IA
+     ════════════════════════════════════════════════════════════════════════ -->
+<meta name="application-name"    content="Vodafone España – Comparador de Precios">
+<meta name="description"         content="Comparador semanal de precios tecnología para Vodafone España. Precios reales scrapeados directamente de cada retailer.">
+<meta name="author"              content="Vodafone España">
+<meta name="update-frequency"    content="weekly">
+<meta name="update-rule"         content="PRECIOS REALES SCRAPEADOS DIRECTAMENTE DE CADA RETAILER. Ver bloque de instrucciones AI al inicio del fichero.">
+<meta name="price-rule"          content="null si no encontrado. Prohibido estimar, interpolar o usar comparadores externos.">
+<meta name="retailers"           content="Amazon,ElCorteIngles,MediaMarkt,PCComponentes,Carrefour,Pixmania,MiElectro,Orange,Movistar">
+<meta name="retailer-indices"    content="amz=5,eci=6,mm=7,pcc=8,car=9,pix=10,mie=11,ora=12,mov=13">
+<meta name="scrape-tool"         content="Playwright Chromium headless — ejecutar scraper.mjs en local (red cloud bloqueada)">
+<meta name="scrape-date"         content="2026-05-20">
+<meta name="next-scrape"         content="2026-05-27">
+<meta name="brand-name"          content="Vodafone España">
+<meta name="brand-color-primary" content="#E60000">
+<meta name="logo-spec"           content="SVG: círculo rojo #E60000 + path blanco speech-bubble + círculo interior rojo r=8.5. Ver SVG en clase vf-icon.">
+<meta name="data-format"         content="RAW=[rank,cat,brand,model,isNew,amz,eci,mm,pcc,car,pix,mie,ora,mov]">
+<meta name="categories"          content="Smartphone,Plegable,Tablet,Portátil,Smart TV,Smartwatch,Auriculares,Cámara,Consola,Domótica,Componentes">
+<meta name="network-constraint"  content="El entorno Claude Code cloud tiene red restringida (todos los dominios externos bloqueados). El scraping DEBE ejecutarse en la máquina local del usuario con: npm install && npm run setup && npm run scrape">
 <style>
 /* ── VODAFONE BRAND PALETTE ──────────────────────────────────────────────── */
 /* Primary: #E60000 (Pantone 485) · Dark grey: #4A4D4E · Purple: #9C2AA0   */
